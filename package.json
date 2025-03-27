@@ -1,0 +1,21 @@
+{
+  "name": "devconnect",
+  "version": "1.0.0",
+  "description": "Dev Connect Place",
+  "keywords": [
+    "backend",
+    "nodejs"
+  ],
+  "license": "ISC",
+  "author": "Jaydeep Yadav",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev" : "nodemon src/app.js",
+    "start" : "node src/app.js" 
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
