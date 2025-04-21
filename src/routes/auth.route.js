@@ -11,7 +11,7 @@ authRouter.post("/signup", async (req, res) => {
         //validate sign up data
         validateSignUpData(req);
 
-        const { firstName, lastName, emailId, password } = req.body;
+        const { firstName, lastName, gender, emailId, password } = req.body;
 
         // Check if User Exists
         const userExists = await User.findOne({ emailId: emailId });
@@ -29,6 +29,7 @@ authRouter.post("/signup", async (req, res) => {
         const user = await User.create({
             firstName,
             lastName,
+            gender,
             emailId,
             password: passwordHash
         })
@@ -42,6 +43,7 @@ authRouter.post("/signup", async (req, res) => {
             })
         }
         
+        // to login the user automatically after sign up //
         const token = await createdUser.getJWT();
 
         res.cookie("token", token, {
@@ -54,7 +56,6 @@ authRouter.post("/signup", async (req, res) => {
         })
 
     } catch (err) {
-        console.log(err);
         res.status(400).send("ERROR : " + err.message);
     }
 })
@@ -63,13 +64,17 @@ authRouter.post("/login", async (req, res) => {
     try {
         const { emailId, password } = req.body;
 
+        if(!emailId || !password){
+            throw new Error("Incomplete credentials");
+        }
+
         const user = await User.findOne({ emailId: emailId });
 
         if (!user) {
             throw new Error("Invalid credentials");
         }
 
-        const isPasswordValid = user.validatePassword(password);
+        const isPasswordValid = await user.validatePassword(password);
 
         if (isPasswordValid) {
             const token = await user.getJWT();

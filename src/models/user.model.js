@@ -74,7 +74,7 @@ userSchema.methods.getJWT = async function(){
     const user = this;
 
     // Create Token - const token = jwt.sign( {data: 'hiddendata'} , 'secret', { expiresIn: '1h' });
-    // Decode Token - var decoded = jwt.verify(token, 'shhhhh');
+    // Decode Token - var decoded = jwt.verify(token, 'secret');
     // console.log(decoded.data) // hiddendata
 
     const token = jwt.sign( {_id: user._id}, process.env.JWT_SECRET , {
