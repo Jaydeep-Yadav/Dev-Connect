@@ -4,6 +4,8 @@ const requestRouter = express.Router();
 import userAuth from '../middlewares/auth.js'
 import ConnectionRequest from '../models/connectionRequest.model.js';
 import User from '../models/user.model.js';
+import sendEmail from "../utils/mailer.js";
+import mongoose from 'mongoose';
 
 requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
     try {
@@ -12,6 +14,7 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
         const status = req.params.status;
 
         const allowedStatus = ["ignored", "interested"];
+        // const allowedStatus = ["interested"];
 
         if (!allowedStatus.includes(status)) {
             return res.status(400).json({ message: "Invalid status type: " + status });
@@ -34,6 +37,15 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
             return res.status(400).send({ message: "Connection Request Already Exists !" });
         }
 
+        const statusMessage = status === "ignored" ? " ignored " : " is interested in ";
+        
+        if(status === "ignored") {
+            return res.status(200).json({
+                message: req.user.firstName + statusMessage + toUser.firstName
+            })
+        }
+
+
         const connectionRequest = new ConnectionRequest({
             fromUserId,
             toUserId,
@@ -42,7 +54,18 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
 
         const data = await connectionRequest.save();
 
-        const statusMessage = status === "ignored" ? " ignored " : " is interested in ";
+
+        // Send Email
+        if (status == "interested") {
+            try {
+                const sender = await User.findById(new mongoose.Types.ObjectId(fromUserId)).select("firstName");
+                const receiver = await User.findById(new mongoose.Types.ObjectId(toUserId)).select("emailId");
+
+                await sendEmail(receiver.emailId, "INTEREST", sender.firstName );
+            } catch (error) {
+                console.error("Error sending email:", error);
+            }
+        }
 
         res.status(201).json({
             message: req.user.firstName + statusMessage + toUser.firstName,
@@ -72,6 +95,14 @@ requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, r
 
         if (!connectionRequest) {
             return res.status(404).json({ message: "Connection request not found" });
+        }
+
+
+        if(status == "rejected"){
+            let data = await connectionRequest.deleteOne();
+            return res.status(200).json({
+                message: "Connection Request " + status,
+            });
         }
 
         connectionRequest.status = status;

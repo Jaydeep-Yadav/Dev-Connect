@@ -7,6 +7,14 @@ import User from '../models/user.model.js';
 
 const USER_SAFE_DATA = "firstName lastName photoUrl age gender about skills";
 
+function shuffleUsers(users) {
+    for (let i = users.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [users[i], users[j]] = [users[j], users[i]]; // Swap elements
+    }
+    return users;
+}
+
 // Get all the pending connection request for the loggedIn user
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
 
@@ -76,12 +84,15 @@ userRouter.get("/feed", userAuth, async (req, res) => {
 
         // create list of users from existing connection requets, to exclude from feed
         const excludeUsersFromFeed = new Set();
+
         connectionRequests.forEach((req) => {
             excludeUsersFromFeed.add(req.fromUserId.toString());
             excludeUsersFromFeed.add(req.toUserId.toString());
         });
 
-        const users = await User.find({
+
+        // fetch users who havent sent / havent received your request && exclude self profile
+        let users = await User.find({
             $and: [
                 { _id: { $nin: Array.from(excludeUsersFromFeed) } },
                 { _id: { $ne: loggedInUser._id } },
@@ -90,6 +101,8 @@ userRouter.get("/feed", userAuth, async (req, res) => {
             .select(USER_SAFE_DATA)
             .skip(skip)
             .limit(limit);
+
+        users = shuffleUsers(users);
 
         res.json({ data: users });
 
