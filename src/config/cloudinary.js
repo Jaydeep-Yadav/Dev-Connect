@@ -14,8 +14,10 @@ cloudinary.config({
 export const deleteFromCloudinary = async (publicUrl) => {
 
   try {
-    // const result = await cloudinary.uploader.destroy("tg30w47blidhe0677wby");
-    // ['DevConnect/Profile Picture/tg30w47blidhe0677wby']
+    if (!publicUrl) {
+      console.error("Image URL is null or undefined");
+      return;
+    }
 
     const regex = /\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/;
     const match = publicUrl.match(regex);
