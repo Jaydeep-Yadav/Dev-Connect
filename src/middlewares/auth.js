@@ -1,12 +1,11 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js'
 
-const userAuth = async (req, res, next) =>{
+const userAuth = async (req, res, next) => {
     try {
         const { token } = req.cookies;
 
-        if(!token){
-            
+        if (!token) {
             return res.status(401).send("Please Login");
         }
 
@@ -15,10 +14,14 @@ const userAuth = async (req, res, next) =>{
         // const _id  = decoded._id;
         const { _id } = decoded;
 
-        const user = await User.findById(_id).select("-password");
-        
-        if(!user){
+        const user = await User.findById(_id).select("-password -verificationToken -verificationTokenExpiresAt -resetPasswordToken  -resetPasswordExpiresAt");
+
+        if (!user) {
             throw new Error("User not found");
+        }
+
+        if(user.isVerified == false){
+            return res.status(401).send("Please verify email");
         }
 
         req.user = user;  // add user in req object
@@ -26,7 +29,10 @@ const userAuth = async (req, res, next) =>{
         next();
 
     } catch (err) {
-       res.status(400).send("ERROR: "+ err.message); 
+        res.status(401).json({
+            success:false,
+            message: err.message
+        })
     }
 }
 

@@ -1,10 +1,12 @@
 import express from 'express';
-const profileRouter = express.Router();
-
-
 import userAuth from '../middlewares/auth.js'
+import upload from '../middlewares/multer.js';
+import cloudinary from "../config/cloudinary.js"
+import getDataUri from "../utils/datauri.js";
 import { validateEditProfileData } from "../utils/validation.js"
-import validator from 'validator';
+import { deleteFromCloudinary } from '../config/cloudinary.js'
+
+const profileRouter = express.Router();
 
 profileRouter.get("/profile/view", userAuth, async (req, res) => {
     try {
@@ -18,7 +20,7 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
     }
 })
 
-profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
+profileRouter.patch("/profile/edit", userAuth, upload.single('photoUrl'), async (req, res) => {
     try {
         if (!validateEditProfileData(req)) {
             throw new Error("Invalid Edit Request");
@@ -28,15 +30,42 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
             throw new Error("Invalid Age: 18 - 100 allowed");
         }
 
-        // if (!validator.isURL(req.body.photoUrl)) {
-        //     throw new Error("Photo URL is not valid");
-        // }
-
         const loggedInUser = req.user;
 
-        Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]));
+        //! for uploading profile picture
+        const profilePicture = req.file;
 
-        loggedInUser.save();
+        let cloudResponse;
+        if (profilePicture) {
+            const fileUri = getDataUri(profilePicture);
+            const folder = process.env.APP_NAME + "/Profile Picture";
+
+
+            // Upload new profile picture //
+            cloudResponse = await cloudinary.uploader.upload(fileUri, {
+                folder: folder
+            });
+
+            deleteFromCloudinary(loggedInUser.photoUrl);
+        }
+
+        loggedInUser.photoUrl = cloudResponse?.secure_url;
+
+
+        //! For updating skills array
+        const parsedSkills = JSON.parse(req.body.skills);
+
+
+        Object.keys(req.body).forEach((key) => {
+            if (key === "skills") {
+                loggedInUser.skills = parsedSkills;
+            } else {
+                loggedInUser[key] = req.body[key];
+            }
+        });
+
+
+        await loggedInUser.save();
 
         res.json({
             message: `${loggedInUser.firstName}, your profile updated successfuly`,
@@ -44,7 +73,7 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
         });
 
     } catch (err) {
-        res.status(400).send("ERROR : " + err.message);
+        res.status(400).send(err.message);
     }
 })
 

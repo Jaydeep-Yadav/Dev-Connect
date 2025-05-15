@@ -45,13 +45,13 @@ const userSchema = new mongoose.Schema({
     gender: {
         type: String,
         enum: {
-            values: ["male", "female", "other"],
+            values: ["","male", "female", "other"],
             message: `{VALUE} is not a valid gender type`
         }
     },
     photoUrl: {
         type: String,
-        default: "https://geographyandyou.com/images/user-profile.png",
+        default: process.env.DEFAULT_AVATAR,
         validate(value) {
             if (!validator.isURL(value)) {
                 throw new Error("Invalid Photo URL: " + value);
@@ -63,28 +63,43 @@ const userSchema = new mongoose.Schema({
         default: "This is a default about of user!"
     },
     skills: {
-        type: [String]
-    }
+        type: [String],
+        default: []
+    },
+
+    // Auth Update
+    lastLogin: {
+        type: Date,
+        default: Date.now,
+    },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    resetPasswordToken: String,
+    resetPasswordExpiresAt: Date,
+    verificationToken: String,
+    verificationTokenExpiresAt: Date
 },
     {
         timestamps: true
     })
 
-userSchema.methods.getJWT = async function(){
+userSchema.methods.getJWT = async function () {
     const user = this;
 
     /* Create Token - const token = jwt.sign( {data: 'hiddendata'} , 'secret', { expiresIn: '1h' });
      Decode Token - var decoded = jwt.verify(token, 'secret');
      console.log(decoded.data) // hiddendata */
 
-    const token = jwt.sign( {_id: user._id}, process.env.JWT_SECRET , {
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
         expiresIn: "7d"
     })
 
     return token;
 }
 
-userSchema.methods.validatePassword = async function (passwordInputByUser){
+userSchema.methods.validatePassword = async function (passwordInputByUser) {
     const user = this;
     const passwordHash = user.password;
 

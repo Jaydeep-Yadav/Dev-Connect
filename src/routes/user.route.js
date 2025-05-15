@@ -25,7 +25,6 @@ userRouter.get("/user/requests/received", userAuth, async (req, res) => {
             toUserId: loggedInUser._id,
             status: "interested"
         }).populate("fromUserId", USER_SAFE_DATA);
-        // }).populate("fromUserId", ["firstName", "lastName"]);
 
         res.json({
             message: "Data fetched Successfully",
@@ -61,13 +60,19 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         res.json({ data })
 
     } catch (err) {
-        res.status(400).send("ERROR : " + err.message);
+         res.status(400).json({
+            success: false,
+            message: err.message,
+        });
     }
 })
 
 userRouter.get("/feed", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user;
+
+        // save last seen in lastLogin field
+        loggedInUser.lastLogin = Date.now();
 
         //Pagination
         const page = parseInt(req.query.page) || 1;
@@ -107,7 +112,7 @@ userRouter.get("/feed", userAuth, async (req, res) => {
         res.json({ data: users });
 
     } catch (err) {
-        res.status(400).send("ERROR : " + err.message);
+        res.status(400).send(err.message);
     }
 })
 

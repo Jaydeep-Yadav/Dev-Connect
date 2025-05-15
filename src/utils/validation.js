@@ -1,17 +1,17 @@
 import validator from 'validator';
 
 export const validateSignUpData = (req) => {
-    const { firstName, lastName,gender, emailId, password } = req.body;
+    const { firstName, lastName, emailId, password } = req.body;
 
-    if (!firstName || !lastName) {
-        throw new Error("Name is not valid")
-    } else if (!validator.isEmail(emailId)) {
+    if (!firstName) {
+        throw new Error("Firstname is not valid")
+    } else if (!lastName) {
+        throw new Error("Lastname is not valid")
+    }
+    else if (!validator.isEmail(emailId)) {
         throw new Error("Email is not valid");
     } else if (!validator.isStrongPassword(password)) {
         throw new Error("Please enter a strong password");
-    }else if(!["male", "female", "other"].includes(gender)){
-        throw new Error("Gender is not valid")
-
     }
 }
 

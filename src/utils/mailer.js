@@ -9,11 +9,10 @@ const EMAIL_TEMPLATES = {
     plainTextContent: `${senderName} has shown interest in you. Check their profile now!`
   }),
 
-  VERIFICATION: (verificationLink) => ({
+  VERIFICATION: (verificationToken) => ({
     subject: "Verify Your Email Address",
-    html: `<p>Click the link below to verify your email:</p>
-           <a href="${verificationLink}">Verify Email</a>`,
-    plainTextContent: "Click the link below to verify your email: " + verificationLink,
+    html: `<p>Verification code : ${verificationToken} </p>`,
+    plainTextContent: `Verification code : ${verificationToken}`
   }),
 
   FORGOT_PASSWORD: (resetLink) => ({
@@ -23,7 +22,34 @@ const EMAIL_TEMPLATES = {
     plainTextContent: "Click the link below to reset your password: " + resetLink,
   }),
 
-  REMINDER_CRON_JOB: (email) =>({
+  PASSWORD_CHANGED: (user) => ({
+    subject: "Password Changed",
+    html: `<p>Hi ${user}, Your password has been changed</p>`,
+    plainTextContent: "Hi ${user}, Your password has been changed",
+  }),
+
+  USER_WELCOME: (userName) => ({
+    subject: `Welcome to Dev Connect, ${userName}!`,
+    html: `<p>Hi <strong>${userName}</strong>,</p>
+           <p>Welcome to Dev Connect! We're excited to have you onboard. Start exploring and connect with fellow developers today.</p>`,
+    plainTextContent: `Hi ${userName},\n\nWelcome to Dev Connect! We're excited to have you onboard. Start exploring and connect with fellow developers today.`
+  }),
+
+  USER_LOGIN: ({ browser, browserVersion, os, osVersion, device }) => ({
+    subject: `New Login Detected`,
+    html: `
+    <h2>New Login Detected</h2>
+    <p>A login to your account was detected from the following device:</p>
+    <ul>
+      <li>Device: ${device}</li>
+      <li>Browser: ${browser} ${browserVersion}</li>
+      <li>OS: ${os} ${osVersion}</li>
+    </ul>
+    <p>If this was not you, please secure your account immediately.</p>`,
+    plainTextContent: `A login to your account was detected from ${device}`
+  }),
+
+  REMINDER_CRON_JOB: (email) => ({
     subject: "New Friend Requests pending for " + email,
     html: `<p>There are friend requests pending, please login to Dev-Connect and accept or reject the requests.</p>`,
     plainTextContent: "There are friend requests pending, please login to Dev-Connect and accept or reject the requests."
@@ -46,7 +72,6 @@ const sendEmail = async (recipientEmail, type, data) => {
       text: plainTextContent,
     });
 
-    console.log(`Email sent to ${recipientEmail} : ${response.data.id}`);
     return response;
   } catch (error) {
     console.error("Error sending email:", error);
